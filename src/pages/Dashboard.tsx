@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +27,14 @@ import {
 
 const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    toast.success("Logged out successfully");
+    navigate("/login");
+  };
 
   const navItems = [
     { icon: Home, label: "Dashboard", href: "/dashboard", active: true },
@@ -86,10 +96,14 @@ const Dashboard = () => {
               <User className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-sm">John Doe</p>
-              <p className="text-xs text-muted-foreground">john@example.com</p>
+              <p className="font-medium text-sm capitalize">{user?.username || "User"}</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
-            <button className="p-2 hover:bg-muted rounded-lg">
+            <button 
+              onClick={handleLogout}
+              className="p-2 hover:bg-muted rounded-lg transition-colors"
+              title="Logout"
+            >
               <LogOut className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
@@ -134,7 +148,7 @@ const Dashboard = () => {
             animate={{ opacity: 1, y: 0 }}
             className="mb-8"
           >
-            <h1 className="font-display text-3xl font-bold mb-2">Welcome back, John! 👋</h1>
+            <h1 className="font-display text-3xl font-bold mb-2">Welcome back, {user?.username || "User"}! 👋</h1>
             <p className="text-muted-foreground">
               Here's an overview of your career progress and opportunities.
             </p>
