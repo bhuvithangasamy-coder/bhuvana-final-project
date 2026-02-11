@@ -8,7 +8,7 @@ interface ApiResponse<T> {
   [key: string]: any;
 }
 
-class ApiService {
+export default class ApiService {
   // Get JWT token from localStorage
   private static getToken(): string | null {
     return localStorage.getItem('token');
