@@ -1,4 +1,4 @@
-from app import db
+from database import db
 from datetime import datetime
 
 class User(db.Model):
@@ -8,6 +8,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default='job_seeker')  # job_seeker or job_poster
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -35,22 +36,103 @@ class Resume(db.Model):
     def __repr__(self):
         return f'<Resume {self.filename}>'
 
+class Recruiter(db.Model):
+    __tablename__ = 'recruiters'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    company_name = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    phone_number = db.Column(db.String(50))
+    role = db.Column(db.String(50), default='super_admin') # super_admin, sub_recruiter, viewer
+    is_verified = db.Column(db.Boolean, default=False)
+    
+    logo_url = db.Column(db.String(500))
+    website = db.Column(db.String(255))
+    address = db.Column(db.Text)
+    about = db.Column(db.Text)
+    
+    plan = db.Column(db.String(50), default='free')
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<Recruiter {self.company_name}>'
+
 class Job(db.Model):
     __tablename__ = 'jobs'
     
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
-    company = db.Column(db.String(255), nullable=False)
-    location = db.Column(db.String(255), nullable=False)
-    job_type = db.Column(db.String(50), nullable=False)
-    salary = db.Column(db.String(100))
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    recruiter_id = db.Column(db.Integer, db.ForeignKey('recruiters.id'))
+    title = db.Column(db.String(255))
+    location = db.Column(db.String(255))
+    salary = db.Column(db.String(255))
+    job_type = db.Column(db.String(255))
+    skills = db.Column(db.Text)
     description = db.Column(db.Text)
-    required_skills = db.Column(db.JSON, default=list)
-    match_score = db.Column(db.Integer, default=0)
+    experience = db.Column(db.String(100))
+    application_deadline = db.Column(db.DateTime)
+    status = db.Column(db.String(50), default='Active') # Active, Closed, Expired, Archived
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
         return f'<Job {self.title}>'
+
+class Application(db.Model):
+    __tablename__ = 'applications'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'))
+    name = db.Column(db.String(255))
+    email = db.Column(db.String(255))
+    phone = db.Column(db.String(255))
+    resume = db.Column(db.Text)
+    status = db.Column(db.String(50), default='Pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+    
+    def __repr__(self):
+        return f'<Application {self.email}>'
+
+
+class ApplicationHistory(db.Model):
+    __tablename__ = 'application_history'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
+    status = db.Column(db.String(50))
+    changed_by = db.Column(db.Integer)  # user id who changed status
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    note = db.Column(db.Text)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'application_id': self.application_id,
+            'status': self.status,
+            'changed_by': self.changed_by,
+            'changed_at': self.changed_at.isoformat() if self.changed_at else None,
+            'note': self.note,
+        }
+
+
+class ApplicationNote(db.Model):
+    __tablename__ = 'application_notes'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    application_id = db.Column(db.Integer, db.ForeignKey('applications.id'), nullable=False)
+    author_id = db.Column(db.Integer)
+    content = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'application_id': self.application_id,
+            'author_id': self.author_id,
+            'content': self.content,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
 
 class Assessment(db.Model):
     __tablename__ = 'assessments'

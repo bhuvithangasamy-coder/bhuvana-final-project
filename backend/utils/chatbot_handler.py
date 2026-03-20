@@ -1,7 +1,19 @@
+import os
 from typing import Dict
+import random
 
-# Career-related Q&A database
-CAREER_QA = {
+# Try to import google-genai for AI responses
+try:
+    from google import genai
+    from google.genai import types
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+
+from typing import Dict, List, Any
+
+# Career-related Q&A database for fallback
+CAREER_QA: Dict[str, Any] = {
     'interview': {
         'keywords': ['interview', 'prepare', 'tip', 'question', 'answer'],
         'responses': [
@@ -69,10 +81,51 @@ CAREER_QA = {
 }
 
 def get_response(user_question: str) -> Dict:
-    """Get response to career question"""
+    """Get response to career question, preferably using AI."""
     user_question_lower = user_question.lower()
     
-    # Find matching category
+    # Try using Gemini AI first if available and API key is set
+    try:
+        # Load env automatically from dotenv if needed (app.py likely did).
+        api_key = os.environ.get('GEMINI_API_KEY')
+        if GEMINI_AVAILABLE and api_key:
+            client = genai.Client(api_key=api_key)
+            
+            # Using standard gemini-1.5-flash model
+            ai_response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=user_question,
+                config=types.GenerateContentConfig(
+                    system_instruction="You are an expert career advisor and job search assistant. "
+                                       "Answer questions related to jobs, interviews, resumes, "
+                                       "career growth, networking, or salary negotiations in a helpful, "
+                                       "concise, and practical manner. Use Markdown. "
+                                       "If a question is completely unrelated to jobs or careers, "
+                                       "politely refuse to answer and guide them back to career topics."
+                )
+            )
+            
+            # Simple category inference
+            matched_category = 'ai_generated'
+            for category, data in CAREER_QA.items():
+                if category != 'default':
+                    for keyword in data['keywords']:
+                        if keyword in user_question_lower:
+                            matched_category = category
+                            break
+                if matched_category != 'ai_generated':
+                    break
+                    
+            return {
+                'success': True,
+                'response': ai_response.text,
+                'category': matched_category
+            }
+    except Exception as e:
+        print(f"AI Generation Failed: {str(e)}. Falling back to local data.")
+        pass # Fallback to local QA code below
+    
+    # Fallback routing to static local categories if no API key or Error occurs
     matched_category = 'default'
     for category, data in CAREER_QA.items():
         if category != 'default':
@@ -86,8 +139,7 @@ def get_response(user_question: str) -> Dict:
     # Get response from matched category
     responses = CAREER_QA[matched_category]['responses']
     
-    # Simple round-robin or random selection
-    import random
+    # Simple random selection
     response = random.choice(responses)
     
     return {

@@ -9,88 +9,202 @@ assessments_bp = Blueprint('assessments', __name__)
 SAMPLE_ASSESSMENTS = [
     {
         'id': 1,
-        'title': 'Python Fundamentals',
+        'title': 'Quantitative Aptitude',
         'category': 'programming',
         'level': 'beginner',
         'duration': 15,
-        'description': 'Test your knowledge of Python basics',
+        'description': 'Test your quantitative and mathematical skills.',
         'questions': [
             {
                 'id': 1,
-                'question': 'What is the correct way to create a list in Python?',
-                'options': [
-                    'my_list = []',
-                    'my_list = {}',
-                    'my_list = ()',
-                    'my_list = <>'
-                ],
-                'correct': 0
+                'question': 'A number is increased by 20% and then decreased by 20%. What is the net change?',
+                'options': ['No change', '4% decrease', '4% increase', '2% decrease'],
+                'correct': 1
             },
             {
                 'id': 2,
-                'question': 'Which of the following is a mutable data type?',
-                'options': [
-                    'Tuple',
-                    'String',
-                    'List',
-                    'Integer'
-                ],
+                'question': 'The average of 5 numbers is 40. If one number is removed, the average becomes 35. What is the removed number?',
+                'options': ['45', '50', '60', '65'],
                 'correct': 2
             },
             {
                 'id': 3,
-                'question': 'What does len() function do?',
-                'options': [
-                    'Returns the length of a string',
-                    'Returns the type of an object',
-                    'Returns the number of items in a sequence',
-                    'Both A and C'
-                ],
-                'correct': 3
-            }
+                'question': 'The ratio of boys to girls in a class is 3:2. If there are 30 students, how many girls are there?',
+                'options': ['10', '12', '15', '18'],
+                'correct': 1
+            },
+            {
+                'id': 4,
+                'question': 'Find the simple interest on Rs. 5000 at 5% per annum for 2 years.',
+                'options': ['400', '500', '600', '700'],
+                'correct': 1
+            },
+            {
+                'id': 5,
+                'question': 'A can complete work in 10 days and B in 15 days. How long together?',
+                'options': ['5', '6', '7', '8'],
+                'correct': 1
+            },
+            {
+                'id': 6,
+                'question': 'A shopkeeper buys an item for Rs. 200 and sells it for Rs. 250. Profit percentage?',
+                'options': ['20%', '25%', '30%', '35%'],
+                'correct': 1
+            },
+            {
+                'id': 7,
+                'question': 'A car travels 60 km in 1 hour. What is its speed?',
+                'options': ['50 km/h', '55 km/h', '60 km/h', '65 km/h'],
+                'correct': 2
+            },
+            {
+                'id': 8,
+                'question': 'Find the next number: 2, 6, 12, 20, ?',
+                'options': ['28', '30', '32', '36'],
+                'correct': 1
+            },
+            {
+                'id': 9,
+                'question': 'If 4 workers complete a job in 8 days, how many days will 8 workers take?',
+                'options': ['2', '4', '6', '8'],
+                'correct': 1
+            },
+            {
+                'id': 10,
+                'question': 'What is 25% of 200?',
+                'options': ['40', '45', '50', '60'],
+                'correct': 2
+            },
+            {
+                'id': 11,
+                'question': 'If 5 pens cost Rs. 50, what is the cost of 8 pens?',
+                'options': ['70', '80', '90', '100'],
+                'correct': 1
+            },
+            {
+                'id': 12,
+                'question': 'Find the average of 10, 20, 30, 40.',
+                'options': ['20', '25', '30', '35'],
+                'correct': 1
+            },
+            {
+                'id': 13,
+                'question': 'An item costing Rs. 500 is sold at Rs. 450. Loss percentage?',
+                'options': ['5%', '8%', '10%', '12%'],
+                'correct': 2
+            },
+            {
+                'id': 14,
+                'question': 'A train travels 120 km in 2 hours. Speed?',
+                'options': ['50 km/h', '60 km/h', '70 km/h', '80 km/h'],
+                'correct': 1
+            },
+            {
+                'id': 15,
+                'question': 'Find the next number: 5, 10, 20, 40, ?',
+                'options': ['60', '70', '80', '90'],
+                'correct': 2
+            },
         ]
     },
     {
         'id': 2,
-        'title': 'React Concepts',
-        'category': 'web-development',
+        'title': 'Logical Reasoning Aptitude',
+        'category': 'reasoning',
         'level': 'intermediate',
         'duration': 20,
-        'description': 'Test your understanding of React principles',
+        'description': 'Test your logical thinking and pattern recognition skills.',
         'questions': [
             {
                 'id': 1,
-                'question': 'What is a React Hook?',
-                'options': [
-                    'A function that allows you to use state in functional components',
-                    'A way to manage component lifecycle',
-                    'A tool to reduce bundle size',
-                    'A debugging utility'
-                ],
-                'correct': 0
+                'question': 'Find the next number in the series: 2, 4, 8, 16, ?',
+                'options': ['24', '30', '32', '34'],
+                'correct': 2
             },
             {
                 'id': 2,
-                'question': 'Which hook is used for side effects in React?',
-                'options': [
-                    'useState',
-                    'useEffect',
-                    'useContext',
-                    'useReducer'
-                ],
-                'correct': 1
+                'question': 'If CAT is written as DBU, how is DOG written?',
+                'options': ['EPH', 'EOG', 'EPG', 'EOH'],
+                'correct': 0
             },
             {
                 'id': 3,
-                'question': 'What is the purpose of key prop in lists?',
-                'options': [
-                    'To improve performance',
-                    'To uniquely identify elements',
-                    'To store data',
-                    'To prevent re-renders'
-                ],
+                'question': "Pointing to a woman, Ravi said: 'She is the daughter of my mother’s only son.' How is the woman related to Ravi?",
+                'options': ['Sister', 'Daughter', 'Mother', 'Niece'],
                 'correct': 1
-            }
+            },
+            {
+                'id': 4,
+                'question': 'Find the missing number: 5, 10, 20, 40, ?',
+                'options': ['60', '70', '80', '90'],
+                'correct': 2
+            },
+            {
+                'id': 5,
+                'question': 'Which word does NOT belong to the group?',
+                'options': ['Apple', 'Banana', 'Carrot', 'Mango'],
+                'correct': 2
+            },
+            {
+                'id': 6,
+                'question': 'If A = 1, B = 2, C = 3, what is the value of CAB?',
+                'options': ['312', '321', '213', '123'],
+                'correct': 0
+            },
+            {
+                'id': 7,
+                'question': 'Find the odd one out.',
+                'options': ['Square', 'Triangle', 'Circle', 'Cube'],
+                'correct': 3
+            },
+            {
+                'id': 8,
+                'question': 'If Monday is the 1st day of the month, what day will be the 10th?',
+                'options': ['Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+                'correct': 1
+            },
+            {
+                'id': 9,
+                'question': 'Which number replaces the question mark? 3, 9, 27, ?',
+                'options': ['54', '72', '81', '90'],
+                'correct': 2
+            },
+            {
+                'id': 10,
+                'question': 'A is taller than B, B is taller than C. Who is the tallest?',
+                'options': ['A', 'B', 'C', 'Cannot determine'],
+                'correct': 0
+            },
+            {
+                'id': 11,
+                'question': 'Find the missing letter: A, C, E, G, ?',
+                'options': ['H', 'I', 'J', 'K'],
+                'correct': 1
+            },
+            {
+                'id': 12,
+                'question': 'If 5 + 3 = 28, 4 + 2 = 24, then 6 + 2 = ?',
+                'options': ['30', '32', '34', '36'],
+                'correct': 1
+            },
+            {
+                'id': 13,
+                'question': 'Which shape has the most sides?',
+                'options': ['Triangle', 'Square', 'Pentagon', 'Hexagon'],
+                'correct': 3
+            },
+            {
+                'id': 14,
+                'question': 'Find the next number: 1, 3, 6, 10, ?',
+                'options': ['12', '14', '15', '18'],
+                'correct': 2
+            },
+            {
+                'id': 15,
+                'question': 'If all roses are flowers and some flowers are red, which statement is correct?',
+                'options': ['All roses are red', 'Some roses may be red', 'No roses are red', 'All flowers are roses'],
+                'correct': 1
+            },
         ]
     }
 ]

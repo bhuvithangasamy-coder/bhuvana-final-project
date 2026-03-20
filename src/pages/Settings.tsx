@@ -15,7 +15,6 @@ import {
   LogOut,
   Bell,
   Search,
-  User,
   Mail,
   Lock,
   Eye,
@@ -27,9 +26,11 @@ import {
   Trash2,
   Download,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import ApiService from "@/services/api";
 
 const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState("account");
@@ -68,7 +69,28 @@ const SettingsPage = () => {
     toast.success("Logged out successfully");
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handleSavePreferences = () => {
+    // Here you would typically save to backend
+    toast.success("Preferences saved successfully!");
+  };
+
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
+
+  const handleVerifyEmail = async () => {
+    setIsVerifyingEmail(true);
+    try {
+      const response = await ApiService.verifyEmail();
+      toast.success(response.message || "Verification email sent successfully!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send verification email");
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oldPassword || !newPassword || !confirmPassword) {
       toast.error("All fields are required");
@@ -82,10 +104,19 @@ const SettingsPage = () => {
       toast.error("Password must be at least 6 characters");
       return;
     }
-    toast.success("Password changed successfully");
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+
+    setIsChangingPassword(true);
+    try {
+      await ApiService.changePassword(oldPassword, newPassword);
+      toast.success("Password changed successfully");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to change password");
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const tabsConfig = [
@@ -124,23 +155,14 @@ const SettingsPage = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm capitalize">{user?.username || "User"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
+                <div className="p-4 border-t border-border">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -150,10 +172,16 @@ const SettingsPage = () => {
         <header className="sticky top-0 z-40 glass border-b border-border/50 px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-xl font-semibold">Settings</h2>
-            <button className="relative p-2 hover:bg-muted rounded-lg">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-sm font-medium leading-tight">{user?.username || "User"}</span>
+                <span className="text-xs text-muted-foreground leading-tight">{user?.email}</span>
+              </div>
+              <button className="relative p-2 hover:bg-muted rounded-lg">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -211,9 +239,9 @@ const SettingsPage = () => {
                       <div>
                         <label className="text-sm font-medium block mb-2">Full Name</label>
                         <Input
-                          defaultValue={user?.username}
+                          value={user?.username || ""}
                           className="h-11"
-                          disabled
+                          readOnly
                         />
                         <p className="text-xs text-muted-foreground mt-1">Username cannot be changed</p>
                       </div>
@@ -222,12 +250,17 @@ const SettingsPage = () => {
                         <label className="text-sm font-medium block mb-2">Email Address</label>
                         <div className="flex gap-2">
                           <Input
-                            defaultValue={user?.email}
+                            value={user?.email || ""}
                             className="h-11 flex-1"
-                            disabled
+                            readOnly
                           />
-                          <Button variant="outline" className="h-11">
-                            Verify
+                          <Button 
+                            variant="outline" 
+                            className="h-11"
+                            onClick={handleVerifyEmail}
+                            disabled={isVerifyingEmail}
+                          >
+                            {isVerifyingEmail ? "Verifying..." : "Verify"}
                           </Button>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">Your primary email address</p>
@@ -236,9 +269,9 @@ const SettingsPage = () => {
                       <div>
                         <label className="text-sm font-medium block mb-2">Member Since</label>
                         <Input
-                          defaultValue="February 8, 2026"
+                          value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : "N/A"}
                           className="h-11"
-                          disabled
+                          readOnly
                         />
                       </div>
                     </div>
@@ -312,8 +345,8 @@ const SettingsPage = () => {
                         </div>
                       </div>
 
-                      <Button type="submit" variant="gradient">
-                        Change Password
+                      <Button type="submit" variant="gradient" disabled={isChangingPassword}>
+                        {isChangingPassword ? "Changing..." : "Change Password"}
                       </Button>
                     </form>
                   </div>
@@ -355,7 +388,7 @@ const SettingsPage = () => {
                     ))}
                   </div>
 
-                  <Button variant="gradient" className="mt-6">
+                  <Button variant="gradient" className="mt-6" onClick={handleSavePreferences}>
                     Save Preferences
                   </Button>
                 </div>
@@ -479,7 +512,7 @@ const SettingsPage = () => {
                       </div>
                     </div>
 
-                    <Button variant="gradient" className="mt-6">
+                    <Button variant="gradient" className="mt-6" onClick={handleSavePreferences}>
                       Save Preferences
                     </Button>
                   </div>

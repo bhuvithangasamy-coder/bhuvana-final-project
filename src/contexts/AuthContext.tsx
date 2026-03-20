@@ -1,17 +1,20 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import ApiService from "@/services/api";
+import authService from "@/services/auth";
 
 interface User {
   id: string;
   email: string;
   username: string;
+  role?: string;
+  createdAt?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, username: string) => Promise<void>;
+  login: (email: string, password: string, isRecruiter?: boolean) => Promise<User>;
+  register: (email: string, password: string, username: string, role?: string, isRecruiter?: boolean, phone_number?: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -24,48 +27,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Check if user is already logged in (on mount)
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error("Failed to parse stored user:", error);
-        localStorage.removeItem("user");
+    const initAuth = async () => {
+      const storedUser = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error("Failed to parse stored user:", error);
+          localStorage.removeItem("user");
+        }
       }
-    }
-    setIsLoading(false);
+
+      if (token) {
+        try {
+          const response = await ApiService.getProfile();
+          if (response.user) {
+            const fetchedUser: User = {
+              id: String(response.user.id),
+              email: response.user.email,
+              username: response.user.username,
+              role: response.user.role,
+              createdAt: response.user.created_at,
+            };
+            setUser(fetchedUser);
+            localStorage.setItem("user", JSON.stringify(fetchedUser));
+          }
+        } catch (error) {
+          console.error("Failed to fetch fresh user profile:", error);
+        }
+      }
+      
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    // Validation
-    if (!email || !password) {
-      throw new Error("Email and password are required");
-    }
-
-    if (!email.includes("@")) {
-      throw new Error("Please enter a valid email");
-    }
-
-    if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters");
-    }
+  const login = async (email: string, password: string, isRecruiter: boolean = false) => {
+    if (!email || !password) throw new Error("Email and password are required");
+    if (!email.includes("@")) throw new Error("Please enter a valid email");
+    if (password.length < 6) throw new Error("Password must be at least 6 characters");
 
     try {
-      // Call API service
-      const response = await ApiService.login(email, password);
+      const response = isRecruiter ? await authService.loginRecruiter(email, password) : await authService.createSession(email, password);
       
       if (response.token && response.user) {
-        // Store token and user data
         localStorage.setItem("token", response.token);
-        
         const newUser: User = {
           id: String(response.user.id),
           email: response.user.email,
           username: response.user.username,
+          role: response.user.role,
+          createdAt: response.user.created_at,
         };
-        
         localStorage.setItem("user", JSON.stringify(newUser));
         setUser(newUser);
+        return newUser;
       } else {
         throw new Error(response.message || "Login failed");
       }
@@ -74,38 +93,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const register = async (email: string, password: string, username: string) => {
-    // Validation
-    if (!email || !password || !username) {
-      throw new Error("All fields are required");
-    }
-
-    if (!email.includes("@")) {
-      throw new Error("Please enter a valid email");
-    }
-
-    if (password.length < 6) {
-      throw new Error("Password must be at least 6 characters");
-    }
-
-    if (username.trim().length < 2) {
-      throw new Error("Username must be at least 2 characters");
-    }
+  const register = async (email: string, password: string, username: string, role?: string, isRecruiter?: boolean, phone_number?: string) => {
+    if (!email || !password || !username) throw new Error("All fields are required");
+    if (!email.includes("@")) throw new Error("Please enter a valid email");
+    if (password.length < 6) throw new Error("Password must be at least 6 characters");
+    if (username.trim().length < 2) throw new Error("Name must be at least 2 characters");
 
     try {
-      // Call API service
-      const response = await ApiService.register(username, email, password);
+      let response;
+      if (isRecruiter) {
+         response = await authService.registerRecruiter(username, email, password, phone_number || "");
+      } else if (role === 'job_poster') {
+         response = await ApiService.register(username, email, password, "job_poster");
+      } else {
+         response = await ApiService.register(username, email, password, role);
+      }
       
       if (response.token && response.user) {
-        // Store token and user data
         localStorage.setItem("token", response.token);
-        
         const newUser: User = {
           id: String(response.user.id),
           email: response.user.email,
           username: response.user.username,
+          role: response.user.role,
+          createdAt: response.user.created_at,
         };
-        
         localStorage.setItem("user", JSON.stringify(newUser));
         setUser(newUser);
       } else {

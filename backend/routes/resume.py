@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
-from app import db
 from config import Config
 from models import Resume, User
 from utils.jwt_utils import token_required
@@ -18,6 +17,7 @@ def allowed_file(filename):
 @token_required
 def upload_resume(payload):
     """Upload and parse resume"""
+    from database import db
     try:
         user_id = payload['user_id']
         user = User.query.get(user_id)

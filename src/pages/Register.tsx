@@ -12,6 +12,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("job_seeker");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
@@ -26,9 +27,8 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
-      await register(email, password, name);
+      await register(email, password, name, role);
       toast.success("Account created successfully! Welcome to ResumeAI.");
       navigate("/dashboard");
     } catch (error) {
@@ -100,6 +100,33 @@ const Register = () => {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-3">
+              <Label>Account Type</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div
+                  className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${
+                    role === "job_seeker"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-muted hover:border-primary/50 text-muted-foreground"
+                  }`}
+                  onClick={() => setRole("job_seeker")}
+                >
+                  <div className="font-semibold">Job Seeker</div>
+                  <div className="text-xs opacity-80 mt-1">I want to find a job</div>
+                </div>
+                <div
+                  className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${
+                    role === "job_poster"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-muted hover:border-primary/50 text-muted-foreground"
+                  }`}
+                  onClick={() => setRole("job_poster")}
+                >
+                  <div className="font-semibold">Job Poster</div>
+                  <div className="text-xs opacity-80 mt-1">I want to hire talent</div>
+                </div>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="name">Full Name</Label>
               <div className="relative">

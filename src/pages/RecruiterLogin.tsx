@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { motion } from "framer-motion";
-import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Sparkles, Mail, Lock, ArrowRight, Eye, EyeOff, Building } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-const Login = () => {
+const RecruiterLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -21,14 +21,9 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const user = await login(email, password);
-      toast.success("Login successful! Welcome to your dashboard.");
-      if (user.role === "admin") {
-        navigate("/admin");
-      } else {
-        // Job posters (recruiters) and job seekers go to the main dashboard
-        navigate("/dashboard");
-      }
+      const user = await login(email, password, true);
+      toast.success(`Welcome back to Recruiter Portal, ${user.username}!`);
+      navigate("/recruiter/dashboard");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Login failed");
     } finally {
@@ -39,24 +34,24 @@ const Login = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-8 bg-zinc-50 dark:bg-zinc-950">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
+          className="w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-8 rounded-2xl shadow-sm"
         >
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center">
+              <Building className="w-5 h-5 text-white" />
             </div>
-            <span className="font-display font-bold text-xl">ResumeAI</span>
+            <span className="font-display font-bold text-xl text-zinc-900 dark:text-zinc-50">Recruiter Portal</span>
           </Link>
 
-          <h1 className="font-display text-3xl font-bold mb-2">Welcome back</h1>
-          <p className="text-muted-foreground mb-8">
-            Sign in to continue to your dashboard
+          <h1 className="font-display text-3xl font-bold mb-2 text-zinc-900 dark:text-zinc-50">Sign In</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 mb-8">
+            Access your talent acquisition dashboard
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -67,7 +62,7 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder="Enter your corporate email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 h-12"
@@ -79,7 +74,7 @@ const Login = () => {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                <Link to="/recruiter/forgot-password" className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -104,7 +99,7 @@ const Login = () => {
               </div>
             </div>
 
-            <Button type="submit" variant="gradient" size="lg" className="w-full" disabled={isLoading}>
+            <Button type="submit" variant="default" size="lg" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" disabled={isLoading}>
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -112,7 +107,7 @@ const Login = () => {
                 </span>
               ) : (
                 <span className="flex items-center gap-2">
-                  Sign In
+                  Access Dashboard
                   <ArrowRight className="w-4 h-4" />
                 </span>
               )}
@@ -121,9 +116,9 @@ const Login = () => {
 
           <div className="mt-8 text-center">
             <p className="text-muted-foreground">
-              Don't have an account?{" "}
-              <Link to="/register" className="text-primary font-medium hover:underline">
-                Create account
+              New company?{" "}
+              <Link to="/recruiter/register" className="text-indigo-600 font-medium hover:underline">
+                Create recruiter account
               </Link>
             </p>
           </div>
@@ -131,38 +126,24 @@ const Login = () => {
       </div>
 
       {/* Right Panel - Visual */}
-      <div className="hidden lg:flex flex-1 relative overflow-hidden bg-gradient-to-br from-primary via-purple-600 to-accent">
-        {/* Pattern */}
-        <div className="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:50px_50px]" />
-        
-        {/* Floating Shapes */}
-        <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full blur-3xl animate-pulse-slow" />
-        <div className="absolute bottom-40 right-20 w-48 h-48 bg-white/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-
+      <div className="hidden lg:flex flex-1 relative overflow-hidden bg-gradient-to-br from-indigo-900 via-slate-900 to-black">
         {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center p-12 text-white">
+        <div className="relative z-10 flex flex-col justify-center p-12 text-white w-full h-full items-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-center"
           >
-            <h2 className="font-display text-4xl font-bold mb-6">
-              AI-Powered Career Growth
-            </h2>
-            <p className="text-white/80 text-lg mb-8 max-w-md">
-              Get instant resume analysis, personalized job recommendations, and career guidance powered by advanced AI.
-            </p>
-            <div className="flex flex-col gap-4">
-              {["ATS Score Analysis", "Skill Gap Detection", "Smart Job Matching"].map((item, i) => (
-                <div key={item} className="flex items-center gap-3">
-                  <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
-                    <div className="w-2 h-2 rounded-full bg-white" />
-                  </div>
-                  <span className="text-white/90">{item}</span>
-                </div>
-              ))}
+            <div className="flex justify-center mb-8">
+               <Building className="w-24 h-24 text-indigo-400 opacity-80" />
             </div>
+            <h2 className="font-display text-4xl font-bold mb-4">
+              Hire the Top 1% Talent
+            </h2>
+            <p className="text-slate-300 text-lg mb-8 max-w-md mx-auto">
+              Our advanced ATS platform streamlines your hiring process and brings you the best candidates faster than ever.
+            </p>
           </motion.div>
         </div>
       </div>
@@ -170,4 +151,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default RecruiterLogin;

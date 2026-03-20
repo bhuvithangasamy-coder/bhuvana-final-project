@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,10 @@ import {
   MapPin,
   DollarSign,
   Clock,
-  User,
-} from "lucide-react";
+  } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import ApiService from "@/services/api";
 
 const mockJobs = [
   {
@@ -40,6 +40,7 @@ const mockJobs = [
     match: 95,
     skills: ["React", "TypeScript", "Tailwind CSS", "Node.js"],
     logo: "TC",
+    applyUrl: "https://jobs.example.com/apply/1",
   },
   {
     id: 2,
@@ -52,6 +53,7 @@ const mockJobs = [
     match: 88,
     skills: ["React", "Python", "PostgreSQL", "AWS"],
     logo: "SX",
+    applyUrl: "https://jobs.example.com/apply/2",
   },
   {
     id: 3,
@@ -64,6 +66,7 @@ const mockJobs = [
     match: 82,
     skills: ["React", "JavaScript", "CSS", "REST APIs"],
     logo: "DA",
+    applyUrl: "https://jobs.example.com/apply/3",
   },
   {
     id: 4,
@@ -76,6 +79,7 @@ const mockJobs = [
     match: 78,
     skills: ["Java", "Spring Boot", "React", "Kubernetes"],
     logo: "ES",
+    applyUrl: "https://jobs.example.com/apply/4",
   },
   {
     id: 5,
@@ -88,10 +92,12 @@ const mockJobs = [
     match: 75,
     skills: ["React", "Figma", "CSS", "User Research"],
     logo: "CS",
+    applyUrl: "https://jobs.example.com/apply/5",
   },
 ];
 
 const DashboardJobs = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
   const { user, logout } = useAuth();
@@ -105,6 +111,28 @@ const DashboardJobs = () => {
     { icon: Camera, label: "Photo Analyzer", href: "/dashboard/photo", active: false },
     { icon: Settings, label: "Settings", href: "/dashboard/settings", active: false },
   ];
+
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [filteredJobs, setFilteredJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await ApiService.getAllJobs();
+        setJobs(response.jobs || []);
+        setFilteredJobs(response.jobs || []);
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        toast.error("Failed to load jobs. Displaying samples.");
+        setJobs(mockJobs);
+        setFilteredJobs(mockJobs);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJobs();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -139,23 +167,14 @@ const DashboardJobs = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm capitalize">{user?.username || "User"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
+                <div className="p-4 border-t border-border">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -176,10 +195,16 @@ const DashboardJobs = () => {
                 />
               </div>
             </div>
-            <button className="relative p-2 hover:bg-muted rounded-lg">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-sm font-medium leading-tight">{user?.username || "User"}</span>
+                <span className="text-xs text-muted-foreground leading-tight">{user?.email}</span>
+              </div>
+              <button className="relative p-2 hover:bg-muted rounded-lg">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -252,7 +277,7 @@ const DashboardJobs = () => {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-6">
                 <p className="text-muted-foreground">
-                  Showing <span className="font-medium text-foreground">{mockJobs.length}</span> jobs
+                  Showing <span className="font-medium text-foreground">{filteredJobs.length}</span> jobs
                 </p>
                 <select className="px-4 py-2 rounded-lg border border-input bg-background text-sm">
                   <option>Most Relevant</option>
@@ -261,8 +286,18 @@ const DashboardJobs = () => {
                 </select>
               </div>
 
-              <div className="space-y-4">
-                {mockJobs.map((job, index) => (
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                {filteredJobs.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground text-lg">No jobs found.</p>
+                    </div>
+                ) : (
+                  filteredJobs.map((job, index) => (
                   <motion.div
                     key={job.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -272,7 +307,7 @@ const DashboardJobs = () => {
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
                       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center font-display font-bold text-primary flex-shrink-0">
-                        {job.logo}
+                        {job.company?.substring(0, 2).toUpperCase() || 'CO'}
                       </div>
 
                       <div className="flex-1">
@@ -284,10 +319,12 @@ const DashboardJobs = () => {
                               <span>{job.company}</span>
                             </div>
                           </div>
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-success/20 text-success text-sm font-medium flex-shrink-0">
-                            <TrendingUp className="w-4 h-4 mr-1" />
-                            {job.match}% Match
-                          </span>
+                          {job.match && (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-success/20 text-success text-sm font-medium flex-shrink-0">
+                              <TrendingUp className="w-4 h-4 mr-1" />
+                              {job.match}% Match
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
@@ -306,8 +343,8 @@ const DashboardJobs = () => {
                         </div>
 
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {job.skills.map((skill) => (
-                            <span key={skill} className="px-3 py-1 rounded-full bg-muted text-sm font-medium">
+                          {(job.skills || job.required_skills || []).map((skill: any, idx: number) => (
+                            <span key={idx} className="px-3 py-1 rounded-full bg-muted text-sm font-medium">
                               {skill}
                             </span>
                           ))}
@@ -319,17 +356,22 @@ const DashboardJobs = () => {
                             <Button variant="ghost" size="sm">
                               <Bookmark className="w-4 h-4" />
                             </Button>
-                            <Button variant="default" size="sm">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => navigate('/apply', { state: { job } })}
+                            >
                               Apply Now
-                              <ExternalLink className="w-4 h-4" />
+                              <ExternalLink className="w-4 h-4 ml-1" />
                             </Button>
                           </div>
                         </div>
                       </div>
                     </div>
                   </motion.div>
-                ))}
+                )))}
               </div>
+              )}
             </div>
           </div>
         </div>

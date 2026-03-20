@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import ApiService from "@/services/api";
+import { useToast } from "@/hooks/use-toast";
 
 const mockJobs = [
   {
@@ -31,6 +33,7 @@ const mockJobs = [
     match: 95,
     skills: ["React", "TypeScript", "Tailwind CSS", "Node.js"],
     logo: "TC",
+    applyUrl: "https://jobs.example.com/apply/1",
   },
   {
     id: 2,
@@ -43,6 +46,7 @@ const mockJobs = [
     match: 88,
     skills: ["React", "Python", "PostgreSQL", "AWS"],
     logo: "SX",
+    applyUrl: "https://jobs.example.com/apply/2",
   },
   {
     id: 3,
@@ -55,6 +59,7 @@ const mockJobs = [
     match: 82,
     skills: ["React", "JavaScript", "CSS", "REST APIs"],
     logo: "DA",
+    applyUrl: "https://jobs.example.com/apply/3",
   },
   {
     id: 4,
@@ -67,6 +72,7 @@ const mockJobs = [
     match: 78,
     skills: ["Java", "Spring Boot", "React", "Kubernetes"],
     logo: "ES",
+    applyUrl: "https://jobs.example.com/apply/4",
   },
   {
     id: 5,
@@ -79,12 +85,89 @@ const mockJobs = [
     match: 75,
     skills: ["React", "Figma", "CSS", "User Research"],
     logo: "CS",
+    applyUrl: "https://jobs.example.com/apply/5",
   },
 ];
 
 const Jobs = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("");
+  const [jobs, setJobs] = useState([]);
+  const [filteredJobs, setFilteredJobs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Fetch jobs on component mount
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const response = await ApiService.getAllJobs();
+        setJobs(response.jobs);
+        setFilteredJobs(response.jobs);
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load jobs. Please try again.",
+          variant: "destructive",
+        });
+        // Fallback to mock data if API fails
+        setJobs(mockJobs);
+        setFilteredJobs(mockJobs);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, [toast]);
+
+  // Filter jobs based on search query and location
+  const handleSearch = async () => {
+    setLoading(true);
+    try {
+      const response = await ApiService.searchJobs(searchQuery, locationFilter);
+      setFilteredJobs(response.jobs);
+    } catch (error) {
+      console.error('Error searching jobs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to search jobs. Please try again.",
+        variant: "destructive",
+      });
+      // Fallback to client-side filtering if API fails
+      let filtered = jobs;
+      if (searchQuery.trim()) {
+        filtered = filtered.filter(job =>
+          job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          job.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (job.required_skills && job.required_skills.some(skill =>
+            skill.toLowerCase().includes(searchQuery.toLowerCase())
+          ))
+        );
+      }
+      if (locationFilter.trim()) {
+        filtered = filtered.filter(job =>
+          job.location.toLowerCase().includes(locationFilter.toLowerCase())
+        );
+      }
+      setFilteredJobs(filtered);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Auto-search when filters change (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (jobs.length > 0) {
+        handleSearch();
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, locationFilter, jobs]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,7 +215,7 @@ const Jobs = () => {
                   className="pl-10 h-12 border-0 bg-muted"
                 />
               </div>
-              <Button variant="gradient" size="lg" className="h-12">
+              <Button variant="gradient" size="lg" className="h-12" onClick={handleSearch}>
                 <Search className="w-5 h-5" />
                 Search Jobs
               </Button>
@@ -203,7 +286,8 @@ const Jobs = () => {
             <div className="flex-1">
               <div className="flex items-center justify-between mb-6">
                 <p className="text-muted-foreground">
-                  Showing <span className="font-medium text-foreground">{mockJobs.length}</span> jobs
+                  Showing <span className="font-medium text-foreground">{filteredJobs.length}</span> jobs
+                  {searchQuery || locationFilter ? ` for "${searchQuery} ${locationFilter}".` : ''}
                 </p>
                 <select className="px-4 py-2 rounded-lg border border-input bg-background text-sm">
                   <option>Most Relevant</option>
@@ -212,82 +296,114 @@ const Jobs = () => {
                 </select>
               </div>
 
-              <div className="space-y-4">
-                {mockJobs.map((job, index) => (
-                  <motion.div
-                    key={job.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="p-6 rounded-2xl bg-card border border-border/50 card-hover"
-                  >
-                    <div className="flex flex-col sm:flex-row gap-4">
-                      {/* Company Logo */}
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center font-display font-bold text-primary flex-shrink-0">
-                        {job.logo}
-                      </div>
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {filteredJobs.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground text-lg">No jobs found matching your criteria.</p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setLocationFilter("");
+                        }}
+                      >
+                        Clear Filters
+                      </Button>
+                    </div>
+                  ) : (
+                    filteredJobs.map((job, index) => (
+                      <motion.div
+                        key={job.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="p-6 rounded-2xl bg-card border border-border/50 card-hover"
+                      >
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          {/* Company Logo */}
+                          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center font-display font-bold text-primary flex-shrink-0">
+                            {job.company?.substring(0, 2).toUpperCase() || 'CO'}
+                          </div>
 
-                      {/* Job Info */}
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between gap-4 mb-2">
-                          <div>
-                            <h3 className="font-display text-lg font-semibold mb-1">{job.title}</h3>
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Building className="w-4 h-4" />
-                              <span>{job.company}</span>
+                          {/* Job Info */}
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                              <div>
+                                <h3 className="font-display text-lg font-semibold mb-1">{job.title}</h3>
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Building className="w-4 h-4" />
+                                  <span>{job.company}</span>
+                                </div>
+                              </div>
+                              {job.match && (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full bg-success/20 text-success text-sm font-medium flex-shrink-0">
+                                  <TrendingUp className="w-4 h-4 mr-1" />
+                                  {job.match}% Match
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {job.location}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {job.job_type || job.type}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <DollarSign className="w-4 h-4" />
+                                {job.salary}
+                              </span>
+                            </div>
+
+                            {/* Skills */}
+                            {job.required_skills && job.required_skills.length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {job.required_skills.map((skill, skillIndex) => (
+                                  <span
+                                    key={skillIndex}
+                                    className="px-3 py-1 rounded-full bg-muted text-sm font-medium"
+                                  >
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Actions */}
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                {job.posted || 'Recently posted'}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm">
+                                  <Bookmark className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => navigate('/apply', { state: { job } })}
+                                >
+                                  Apply Now
+                                  <ExternalLink className="w-4 h-4 ml-1" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                          <span className="inline-flex items-center px-3 py-1 rounded-full bg-success/20 text-success text-sm font-medium flex-shrink-0">
-                            <TrendingUp className="w-4 h-4 mr-1" />
-                            {job.match}% Match
-                          </span>
                         </div>
-
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            {job.location}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            {job.type}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <DollarSign className="w-4 h-4" />
-                            {job.salary}
-                          </span>
-                        </div>
-
-                        {/* Skills */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {job.skills.map((skill) => (
-                            <span
-                              key={skill}
-                              className="px-3 py-1 rounded-full bg-muted text-sm font-medium"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">{job.posted}</span>
-                          <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm">
-                              <Bookmark className="w-4 h-4" />
-                            </Button>
-                            <Button variant="default" size="sm">
-                              Apply Now
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

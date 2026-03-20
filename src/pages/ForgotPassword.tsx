@@ -14,11 +14,30 @@ const ForgotPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // TODO: Implement actual password reset logic with Supabase
-    setTimeout(() => {
-      setIsLoading(false);
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email })
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Something went wrong');
+      }
+
       setIsSubmitted(true);
-    }, 1500);
+    } catch (error) {
+      console.error('Reset error:', error);
+      // We still show success to avoid email enumeration, 
+      // but in this case we'll just show the success screen.
+      setIsSubmitted(true);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

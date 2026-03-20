@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,6 @@ import {
   Download,
   Trash2,
   Eye,
-  User,
   CheckCircle,
   AlertCircle,
   Building,
@@ -29,9 +28,11 @@ import {
   DollarSign,
   ExternalLink,
   Bookmark,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import ApiService from "@/services/api";
 
 // Mock job matches based on resume
 const mockJobMatches = [
@@ -82,16 +83,19 @@ const mockJobMatches = [
 ];
 
 interface ResumeData {
-  fileName: string;
-  uploadDate: string;
-  atsScore: number;
+  filename: string;
+  uploaded_at: string;
+  ats_score: number;
   skills: string[];
 }
 
 const MyResume = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [resumeData, setResumeData] = useState<ResumeData | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, logout } = useAuth();
 
   const navItems = [
@@ -105,7 +109,7 @@ const MyResume = () => {
   ];
 
   const resumeStats = [
-    { icon: TrendingUp, label: "ATS Score", value: resumeData ? `${resumeData.atsScore}%` : "—", color: "text-success" },
+    { icon: TrendingUp, label: "ATS Score", value: resumeData ? `${resumeData.ats_score}%` : "—", color: "text-success" },
     { icon: Target, label: "Job Matches", value: resumeData ? mockJobMatches.length : "0", color: "text-primary" },
     { icon: Award, label: "Skills Found", value: resumeData ? resumeData.skills.length : "0", color: "text-accent" },
   ];
@@ -133,25 +137,35 @@ const MyResume = () => {
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       handleFileUpload(e.target.files[0]);
+      // Reset the input value to allow selecting the same file again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     if (!file.name.endsWith(".pdf") && !file.type.includes("pdf")) {
       toast.error("Please upload a PDF file");
       return;
     }
 
-    // Simulate resume parsing
-    const newResumeData: ResumeData = {
-      fileName: file.name,
-      uploadDate: new Date().toLocaleDateString(),
-      atsScore: 85,
-      skills: ["React", "TypeScript", "Node.js", "Python", "AWS", "PostgreSQL", "REST APIs", "Git"],
-    };
+    if (!user) {
+      toast.error("Please log in to upload a resume");
+      return;
+    }
 
-    setResumeData(newResumeData);
-    toast.success("Resume uploaded successfully! Job matches updated.");
+    setIsUploading(true);
+    try {
+      const response = await ApiService.uploadResume(file);
+      setResumeData(response.resume);
+      toast.success("Resume uploaded successfully! Job matches updated.");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error(error.message || "Failed to upload resume. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const downloadResume = () => {
@@ -193,23 +207,14 @@ const MyResume = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm capitalize">{user?.username || "User"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
+                <div className="p-4 border-t border-border">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -230,7 +235,11 @@ const MyResume = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-sm font-medium leading-tight">{user?.username || "User"}</span>
+                <span className="text-xs text-muted-foreground leading-tight">{user?.email}</span>
+              </div>
               <button className="relative p-2 hover:bg-muted rounded-lg">
                 <Bell className="w-5 h-5 text-muted-foreground" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
@@ -296,24 +305,36 @@ const MyResume = () => {
                         : "border-border hover:border-primary/50"
                     }`}
                   >
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                      <Upload className="w-8 h-8 text-primary" />
-                    </div>
-                    <p className="font-medium mb-2">Drop your resume here</p>
-                    <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
-                    <input
-                      type="file"
-                      accept=".pdf"
-                      onChange={handleFileInput}
-                      className="hidden"
-                      id="resume-input"
-                    />
-                    <label htmlFor="resume-input">
-                      <Button variant="outline" size="sm" className="cursor-pointer">
-                        Choose File
-                      </Button>
-                    </label>
-                    <p className="text-xs text-muted-foreground mt-4">PDF only, max 10MB</p>
+                    {isUploading ? (
+                      <div className="flex flex-col items-center">
+                        <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
+                        <p className="font-medium mb-2">Uploading resume...</p>
+                        <p className="text-sm text-muted-foreground">Please wait while we analyze your resume</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                          <Upload className="w-8 h-8 text-primary" />
+                        </div>
+                        <p className="font-medium mb-2">Drop your resume here</p>
+                        <p className="text-sm text-muted-foreground mb-4">or click to browse</p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pdf"
+                          onChange={handleFileInput}
+                          className="hidden"
+                          id="resume-input"
+                          disabled={isUploading}
+                        />
+                        <label htmlFor="resume-input">
+                          <div className={`inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            Choose File
+                          </div>
+                        </label>
+                        <p className="text-xs text-muted-foreground mt-4">PDF only, max 10MB</p>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -323,8 +344,8 @@ const MyResume = () => {
                           <CheckCircle className="w-5 h-5 text-success" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-sm">{resumeData.fileName}</p>
-                          <p className="text-xs text-muted-foreground">Uploaded on {resumeData.uploadDate}</p>
+                          <p className="font-medium text-sm">{resumeData.filename}</p>
+                          <p className="text-xs text-muted-foreground">Uploaded on {new Date(resumeData.uploaded_at).toLocaleDateString()}</p>
                         </div>
                       </div>
                     </div>
@@ -362,7 +383,7 @@ const MyResume = () => {
                   <div className="p-6 rounded-2xl bg-gradient-to-br from-success/10 to-accent/10 border border-success/20">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-display text-lg font-semibold">ATS Score Analysis</h3>
-                      <span className="text-3xl font-bold text-success">{resumeData.atsScore}%</span>
+                      <span className="text-3xl font-bold text-success">{resumeData.ats_score}%</span>
                     </div>
                     <p className="text-muted-foreground mb-4">
                       Your resume is optimized for Applicant Tracking Systems. You're in the top 15% of resumes!
@@ -370,7 +391,7 @@ const MyResume = () => {
                     <div className="w-full bg-border rounded-full h-2 overflow-hidden">
                       <div
                         className="h-full bg-gradient-to-r from-success to-accent transition-all duration-500"
-                        style={{ width: `${resumeData.atsScore}%` }}
+                        style={{ width: `${resumeData.ats_score}%` }}
                       />
                     </div>
                   </div>
@@ -485,9 +506,13 @@ const MyResume = () => {
                           <Button variant="ghost" size="sm">
                             <Bookmark className="w-4 h-4" />
                           </Button>
-                          <Button variant="default" size="sm">
+                          <Button 
+                            variant="default" 
+                            size="sm"
+                            onClick={() => navigate('/apply', { state: { job } })}
+                          >
                             Apply Now
-                            <ExternalLink className="w-4 h-4" />
+                            <ExternalLink className="w-4 h-4 ml-1" />
                           </Button>
                         </div>
                       </div>

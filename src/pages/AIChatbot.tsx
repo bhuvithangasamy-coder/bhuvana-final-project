@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,6 @@ import {
   Bell,
   Search,
   Send,
-  User,
   Lightbulb,
   Zap,
 } from "lucide-react";
@@ -28,6 +28,7 @@ const AIChatbot = () => {
     { role: "assistant", content: "Hi! I'm your AI Career Coach. How can I help you today? I can assist with resume tips, job search strategies, interview preparation, and career advice." },
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { user, logout } = useAuth();
 
   const navItems = [
@@ -45,26 +46,40 @@ const AIChatbot = () => {
     toast.success("Logged out successfully");
   };
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
 
     const userMessage = { role: "user", content: inputValue };
-    setMessages([...messages, userMessage]);
-
-    // Simulate AI response
-    setTimeout(() => {
-      const responses = [
-        "That's a great question! Here are some tips to improve your resume...",
-        "Based on your skills, I'd recommend focusing on projects that showcase your technical abilities.",
-        "Interview preparation is key! Make sure to practice common questions and have concrete examples ready.",
-        "Your career growth depends on continuous learning. Consider taking courses in emerging technologies.",
-        "Networking is crucial. Try attending industry conferences and connecting with professionals on LinkedIn.",
-      ];
-      const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-      setMessages((prev) => [...prev, { role: "assistant", content: randomResponse }]);
-    }, 1000);
-
+    setMessages((prev) => [...prev, userMessage]);
+    
+    const question = inputValue;
     setInputValue("");
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/chatbot/ask", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ question }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      const data = await response.json();
+      setMessages((prev) => [...prev, { role: "assistant", content: data.answer }]);
+    } catch (error) {
+      console.error("Chatbot error:", error);
+      toast.error("Failed to get response from AI Coach.");
+      // Optional: remove the user message or show an error message in chat
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -102,23 +117,14 @@ const AIChatbot = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm capitalize">{user?.username || "User"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
+                <div className="p-4 border-t border-border">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -128,10 +134,16 @@ const AIChatbot = () => {
         <header className="sticky top-0 z-40 glass border-b border-border/50 px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-xl font-semibold">AI Career Coach</h2>
-            <button className="relative p-2 hover:bg-muted rounded-lg">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-sm font-medium leading-tight">{user?.username || "User"}</span>
+                <span className="text-xs text-muted-foreground leading-tight">{user?.email}</span>
+              </div>
+              <button className="relative p-2 hover:bg-muted rounded-lg">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -147,13 +159,17 @@ const AIChatbot = () => {
                 className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-md px-4 py-3 rounded-2xl ${
+                  className={`max-w-prose px-4 py-3 rounded-2xl text-sm ${
                     message.role === "user"
                       ? "bg-primary text-white rounded-br-none"
-                      : "bg-card border border-border/50 rounded-bl-none"
+                      : "bg-card border border-border/50 rounded-bl-none prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-pre:bg-muted"
                   }`}
                 >
-                  <p className="text-sm">{message.content}</p>
+                  {message.role === "assistant" ? (
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
                 </div>
               </motion.div>
             ))}
@@ -198,8 +214,8 @@ const AIChatbot = () => {
               onKeyPress={handleKeyPress}
               className="flex-1"
             />
-            <Button variant="gradient" size="lg" onClick={handleSendMessage} disabled={!inputValue.trim()}>
-              <Send className="w-5 h-5" />
+            <Button variant="gradient" size="lg" onClick={handleSendMessage} disabled={!inputValue.trim() || isLoading}>
+              <Send className={`w-5 h-5 ${isLoading ? "animate-pulse" : ""}`} />
             </Button>
           </div>
         </div>

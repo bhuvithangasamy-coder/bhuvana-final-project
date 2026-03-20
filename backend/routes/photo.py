@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.utils import secure_filename
 import os
-from app import db
 from models import PhotoAnalysis
 from utils.jwt_utils import token_required
 # from utils.photo_analyzer import analyze_photo  # Disabled due to OpenCV dependency
@@ -39,6 +38,7 @@ def mock_analyze_photo(file_path: str):
 @token_required
 def upload_photo(payload):
     """Upload and analyze a professional photo"""
+    from database import db
     try:
         user_id = payload.get('user_id')
         

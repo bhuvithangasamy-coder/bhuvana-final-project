@@ -8,17 +8,37 @@ from config import Config
 JWT_SECRET = Config.JWT_SECRET_KEY
 JWT_ALGORITHM = 'HS256'
 
-def generate_token(user_id, username, email):
+def generate_token(user_id, username, email, role='job_seeker'):
     """Generate JWT token"""
     payload = {
         'user_id': user_id,
         'username': username,
         'email': email,
+        'role': role,
         'iat': datetime.utcnow(),
         'exp': datetime.utcnow() + timedelta(days=30)
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return token
+
+def generate_reset_token(user_id, email, is_recruiter=False):
+    """Generate short-lived JWT token for password reset"""
+    payload = {
+        'reset_user_id': user_id,
+        'email': email,
+        'is_recruiter': is_recruiter,
+        'iat': datetime.utcnow(),
+        'exp': datetime.utcnow() + timedelta(hours=1)
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_reset_token(token):
+    """Verify reset token"""
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        return payload if 'reset_user_id' in payload else None
+    except:
+        return None
 
 def verify_token(token):
     """Verify JWT token"""

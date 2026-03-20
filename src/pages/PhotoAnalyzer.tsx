@@ -14,7 +14,6 @@ import {
   LogOut,
   Bell,
   Search,
-  User,
   Upload,
   CheckCircle,
   AlertCircle,
@@ -79,6 +78,10 @@ const PhotoAnalyzer = () => {
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       handleFileUpload(e.target.files[0]);
+      // Reset the input value so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -166,23 +169,14 @@ const PhotoAnalyzer = () => {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 px-4 py-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm capitalize">{user?.username || "User"}</p>
-              <p className="text-xs text-muted-foreground">{user?.email}</p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </button>
-          </div>
+                <div className="p-4 border-t border-border">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -192,10 +186,16 @@ const PhotoAnalyzer = () => {
         <header className="sticky top-0 z-40 glass border-b border-border/50 px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-display text-xl font-semibold">Profile Photo Analyzer</h2>
-            <button className="relative p-2 hover:bg-muted rounded-lg">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </button>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex flex-col items-end">
+                <span className="text-sm font-medium leading-tight">{user?.username || "User"}</span>
+                <span className="text-xs text-muted-foreground leading-tight">{user?.email}</span>
+              </div>
+              <button className="relative p-2 hover:bg-muted rounded-lg">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
+              </button>
+            </div>
           </div>
         </header>
 
@@ -247,11 +247,17 @@ const PhotoAnalyzer = () => {
                     className="hidden"
                     id="photo-input"
                   />
-                  <label htmlFor="photo-input">
-                    <Button variant="outline" size="sm" className="cursor-pointer">
-                      Choose File
-                    </Button>
-                  </label>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => {
+                      if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
+                    }}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 cursor-pointer"
+                  >
+                    Choose File
+                  </div>
                   <p className="text-xs text-muted-foreground mt-4">JPG, PNG, WebP - max 10MB</p>
                 </div>
               ) : (

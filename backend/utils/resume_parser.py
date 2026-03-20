@@ -1,4 +1,4 @@
-import PyPDF2
+from pypdf import PdfReader
 import re
 from typing import Dict, List
 
@@ -19,7 +19,7 @@ def extract_text_from_pdf(file_path: str) -> str:
     try:
         text = ""
         with open(file_path, 'rb') as pdf_file:
-            pdf_reader = PyPDF2.PdfReader(pdf_file)
+            pdf_reader = PdfReader(pdf_file)
             for page in pdf_reader.pages:
                 text += page.extract_text()
         return text
