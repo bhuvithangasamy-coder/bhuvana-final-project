@@ -103,8 +103,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let response;
       if (isRecruiter) {
          response = await authService.registerRecruiter(username, email, password, phone_number || "");
-      } else if (role === 'job_poster') {
-         response = await ApiService.register(username, email, password, "job_poster");
+      } else if (role === 'admin') {
+         response = await ApiService.register(username, email, password, "admin");
       } else {
          response = await ApiService.register(username, email, password, role);
       }

@@ -9,7 +9,7 @@ with app.app_context():
     if len(apps) > 0:
         print("First app job_id:", apps[0].job_id)
 
-    users = User.query.filter((User.role == 'job_poster') | (User.role == 'admin')).all()
+    users = User.query.filter((User.role == 'admin') | (User.role == 'admin')).all()
     for u in users:
         print(f"User {u.id}: {u.username} ({u.role})")
         try:

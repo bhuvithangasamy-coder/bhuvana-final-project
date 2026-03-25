@@ -44,7 +44,7 @@ def register():
         
         # Set role (default: job_seeker)
         role = data.get('role', 'job_seeker')
-        if role not in ['job_seeker', 'job_poster', 'admin']:
+        if role not in ['job_seeker', 'admin', 'admin']:
             role = 'job_seeker'
         # Create user
         user = User(
@@ -136,7 +136,7 @@ def switch_role(payload):
             return jsonify({'message': 'User not found'}), 404
         data = request.get_json()
         new_role = data.get('role')
-        if new_role not in ['job_seeker', 'job_poster', 'admin']:
+        if new_role not in ['job_seeker', 'admin', 'admin']:
             return jsonify({'message': 'Invalid role'}), 400
         user.role = new_role
         db.session.commit()

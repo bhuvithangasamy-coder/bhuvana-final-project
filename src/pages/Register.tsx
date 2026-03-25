@@ -116,13 +116,13 @@ const Register = () => {
                 </div>
                 <div
                   className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${
-                    role === "job_poster"
+                    role === "admin"
                       ? "border-primary bg-primary/10 text-primary"
                       : "border-muted hover:border-primary/50 text-muted-foreground"
                   }`}
-                  onClick={() => setRole("job_poster")}
+                  onClick={() => setRole("admin")}
                 >
-                  <div className="font-semibold">Job Poster</div>
+                  <div className="font-semibold">Admin</div>
                   <div className="text-xs opacity-80 mt-1">I want to hire talent</div>
                 </div>
               </div>
