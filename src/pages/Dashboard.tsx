@@ -62,7 +62,7 @@ const Dashboard = () => {
 
   // Redirect recruiters/admins to the admin page (restore previous behavior)
   useEffect(() => {
-    if (user && (user.role === 'job_poster' || user.role === 'admin')) {
+    if (user && (user.role === 'admin' || user.role === 'admin')) {
       navigate('/admin');
     }
   }, [user, navigate]);
@@ -70,7 +70,7 @@ const Dashboard = () => {
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
-        if (user && user.role === 'job_poster') {
+        if (user && user.role === 'admin') {
           const stats = await ApiService.getRecruiterDashboard();
           setRecruiterStats(stats);
 
@@ -92,7 +92,7 @@ const Dashboard = () => {
   // Aggregate application counts across all jobs
   useEffect(() => {
     const aggregate = async () => {
-      if (!user || user.role !== 'job_poster' || !myJobs.length) return;
+      if (!user || user.role !== 'admin' || !myJobs.length) return;
       let total = 0, pending = 0, selected = 0, rejected = 0;
       try {
         for (const job of myJobs) {
@@ -295,7 +295,7 @@ const Dashboard = () => {
           </div>
 
           {/* Applications Overview (Recruiter) - full width aligned with stats */}
-          {user && user.role === 'job_poster' && (
+          {user && user.role === 'admin' && (
             <div className="mb-8 w-full">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -676,7 +676,7 @@ const Dashboard = () => {
               </Link>
             </div>
               <div className="space-y-4">
-                {user && user.role === 'job_poster' ? (
+                {user && user.role === 'admin' ? (
                   myJobs.length ? (
                     myJobs.map((job: any) => (
                       <div key={job.id} className="flex items-center gap-4 p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors">

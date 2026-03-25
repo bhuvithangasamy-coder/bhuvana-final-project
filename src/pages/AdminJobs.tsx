@@ -22,9 +22,11 @@ const AdminJobs = () => {
 
   const [form, setForm] = useState({
     title: "",
+    company_name: "",
     location: "",
     salary: "",
     job_type: "",
+    vacancies: "",
     skills: "",
     description: "",
   });
@@ -65,7 +67,7 @@ const AdminJobs = () => {
     }
   };
 
-  if (!user || (user.role !== "admin" && user.role !== "job_poster")) {
+  if (!user || (user.role !== "admin" && user.role !== "admin")) {
     return <div className="p-6">Access denied.</div>;
   }
 
@@ -128,6 +130,11 @@ const AdminJobs = () => {
         </div>
 
         <div>
+          <Label>Company Name</Label>
+          <Input name="company_name" value={form.company_name} onChange={handleChange} placeholder="Leave empty to use your profile company name" />
+        </div>
+
+        <div>
           <Label>Location</Label>
           <Input name="location" value={form.location} onChange={handleChange} required />
         </div>
@@ -140,6 +147,11 @@ const AdminJobs = () => {
         <div>
           <Label>Job Type</Label>
           <Input name="job_type" value={form.job_type} onChange={handleChange} placeholder="Full-time" />
+        </div>
+
+        <div>
+          <Label>No. of Vacancies</Label>
+          <Input name="vacancies" type="number" value={form.vacancies} onChange={handleChange} placeholder="e.g. 5" />
         </div>
 
         <div>
@@ -288,8 +300,8 @@ const AdminJobs = () => {
                   .map((j) => (
                   <div key={j.id} className="p-3 rounded-xl bg-card border border-border/50 flex items-center justify-between">
                     <div>
-                      <div className="font-medium">{j.title} <span className="text-sm text-muted-foreground">({j.location})</span></div>
-                      <div className="text-sm text-muted-foreground">Status: {j.status}</div>
+                      <div className="font-medium">{j.title} <span className="text-sm text-muted-foreground">({j.company_name ? `${j.company_name} - ` : ''}{j.location})</span></div>
+                      <div className="text-sm text-muted-foreground">Status: {j.status} | Vacancies: {j.vacancies || "Not specified"} | Posted: {j.created_at ? new Date(j.created_at).toLocaleDateString() : 'Unknown'}</div>
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={() => { navigator.clipboard?.writeText(String(j.id)); toast.success('Job ID copied'); }}>

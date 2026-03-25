@@ -40,12 +40,15 @@ def get_job_matches(payload):
                         skills_list = list(j.skills)
 
                 company_name = 'Employer'
-                try:
-                    r = Recruiter.query.get(j.recruiter_id)
-                    if r and getattr(r, 'company_name', None):
-                        company_name = r.company_name
-                except Exception:
-                    pass
+                if getattr(j, 'company_name', None):
+                    company_name = j.company_name
+                else:
+                    try:
+                        r = Recruiter.query.get(j.recruiter_id)
+                        if r and getattr(r, 'company_name', None):
+                            company_name = r.company_name
+                    except Exception:
+                        pass
 
                 db_jobs.append({
                     'id': j.id,
@@ -53,6 +56,8 @@ def get_job_matches(payload):
                     'company': company_name,
                     'location': j.location,
                     'job_type': j.job_type,
+                    'vacancies': j.vacancies,
+                    'created_at': j.created_at.isoformat() if hasattr(j, 'created_at') and j.created_at else None,
                     'salary': j.salary,
                     'required_skills': skills_list,
                     'description': j.description
@@ -85,12 +90,15 @@ def get_all_jobs(payload):
             db_jobs = Job.query.filter_by(status='Active').all()
             for j in db_jobs:
                 company_name = 'Employer'
-                try:
-                    r = Recruiter.query.get(j.recruiter_id)
-                    if r and getattr(r, 'company_name', None):
-                        company_name = r.company_name
-                except Exception:
-                    pass
+                if getattr(j, 'company_name', None):
+                    company_name = j.company_name
+                else:
+                    try:
+                        r = Recruiter.query.get(j.recruiter_id)
+                        if r and getattr(r, 'company_name', None):
+                            company_name = r.company_name
+                    except Exception:
+                        pass
 
                 skills_list = []
                 if j.skills:
@@ -105,6 +113,8 @@ def get_all_jobs(payload):
                     'company': company_name,
                     'location': j.location,
                     'job_type': j.job_type,
+                    'vacancies': j.vacancies,
+                    'created_at': j.created_at.isoformat() if hasattr(j, 'created_at') and j.created_at else None,
                     'salary': j.salary,
                     'required_skills': skills_list,
                     'description': j.description
@@ -288,9 +298,17 @@ def post_job(payload):
         data = request.get_json() or {}
 
         title = data.get('title')
+        company_name = data.get('company_name')
         location = data.get('location')
         salary = data.get('salary')
         job_type = data.get('job_type')
+        vacancies_raw = data.get('vacancies')
+        vacancies = None
+        if vacancies_raw and str(vacancies_raw).strip():
+            try:
+                vacancies = int(vacancies_raw)
+            except ValueError:
+                pass
         skills = data.get('skills')
         description = data.get('description')
 
@@ -312,9 +330,11 @@ def post_job(payload):
         job = Job(
             recruiter_id=recruiter_id,
             title=title,
+            company_name=company_name,
             location=location,
             salary=salary,
             job_type=job_type,
+            vacancies=vacancies,
             skills=skills,
             description=description,
             experience=experience,
@@ -342,6 +362,8 @@ def post_job(payload):
             'location': job.location,
             'salary': job.salary,
             'job_type': job.job_type,
+            'vacancies': job.vacancies,
+            'created_at': job.created_at.isoformat() if hasattr(job, 'created_at') and job.created_at else None,
             'skills': job.skills,
             'description': job.description,
             'experience': job.experience,
@@ -379,6 +401,15 @@ def update_job(payload, job_id):
             job.salary = data['salary']
         if 'job_type' in data:
             job.job_type = data['job_type']
+        if 'vacancies' in data:
+            vacs_raw = data['vacancies']
+            if vacs_raw and str(vacs_raw).strip():
+                try:
+                    job.vacancies = int(vacs_raw)
+                except ValueError:
+                    job.vacancies = None
+            else:
+                job.vacancies = None
         if 'skills' in data:
             job.skills = data['skills']
         if 'description' in data:
@@ -443,9 +474,11 @@ def my_jobs(payload):
             jobs_data.append({
                 'id': j.id,
                 'title': j.title,
+                'company_name': j.company_name,
                 'location': j.location,
                 'salary': j.salary,
                 'job_type': j.job_type,
+                'vacancies': j.vacancies,
                 'skills': j.skills,
                 'description': j.description,
                 'experience': j.experience,

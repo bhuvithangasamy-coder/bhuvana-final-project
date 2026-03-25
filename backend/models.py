@@ -8,7 +8,7 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.String(20), nullable=False, default='job_seeker')  # job_seeker or job_poster
+    role = db.Column(db.String(20), nullable=False, default='job_seeker')  # job_seeker or admin
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -65,9 +65,11 @@ class Job(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     recruiter_id = db.Column(db.Integer, db.ForeignKey('recruiters.id'))
     title = db.Column(db.String(255))
+    company_name = db.Column(db.String(255))
     location = db.Column(db.String(255))
     salary = db.Column(db.String(255))
     job_type = db.Column(db.String(255))
+    vacancies = db.Column(db.Integer)
     skills = db.Column(db.Text)
     description = db.Column(db.Text)
     experience = db.Column(db.String(100))

@@ -21,7 +21,7 @@ import ApiService from "@/services/api";
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   
-  if (!user || (user.role !== "admin" && user.role !== "job_poster")) {
+  if (!user || (user.role !== "admin" && user.role !== "admin")) {
     return <Navigate to="/" replace />;
   }
 
@@ -35,7 +35,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        if (user.role === "job_poster" || user.role === "admin") {
+        if (user.role === "admin" || user.role === "admin") {
           const response = await ApiService.getRecruiterDashboard();
           setStats({
             totalJobs: response.total_jobs || 0,
@@ -62,7 +62,7 @@ const AdminDashboard = () => {
             <Sparkles className="w-5 h-5 text-white" />
           </div>
           <span className="font-display font-bold text-lg">
-            {user?.role === "admin" ? "ResumeAI Admin" : "Job Poster Dashboard"}
+            {user?.role === "admin" ? "ResumeAI Admin" : "Admin Dashboard"}
           </span>
         </Link>
 
@@ -74,15 +74,6 @@ const AdminDashboard = () => {
             <LayoutDashboard className="w-5 h-5" />
             <span className="font-medium">Overview</span>
           </Link>
-          {user?.role === "admin" && (
-            <Link
-              to="/admin/users"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <Users className="w-5 h-5" />
-              <span className="font-medium">Manage Users</span>
-            </Link>
-          )}
           <Link
             to="/admin/jobs"
             className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -90,16 +81,7 @@ const AdminDashboard = () => {
             <Briefcase className="w-5 h-5" />
             <span className="font-medium">Manage Jobs</span>
           </Link>
-          {user?.role === "admin" && (
-            <Link
-              to="/admin/assessments"
-              className="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <FileText className="w-5 h-5" />
-              <span className="font-medium">Manage Assessments</span>
-            </Link>
-          )}
-        </nav>
+          </nav>
 
         <div className="p-4 border-t border-border">
           <button 
@@ -120,7 +102,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 max-w-xl relative hidden md:block">
                <h2 className="font-display text-xl font-semibold">
-                 {user?.role === "admin" ? "Admin Panel" : "Job Poster Panel"}
+                 {user?.role === "admin" ? "Admin Panel" : "Admin Panel"}
                </h2>
             </div>
             <div className="flex items-center gap-4">
@@ -215,11 +197,7 @@ const AdminDashboard = () => {
               {user?.role === "admin" ? "Manage users and jobs directly from the admin interface." : "Manage your job postings and applications."}
             </p>
             <div className="flex flex-wrap gap-4">
-                {user?.role === "admin" && <Button variant="outline" onClick={() => navigate('/admin/users')}>Manage Users</Button>}
                 <Button variant="outline" onClick={() => navigate('/admin/jobs')}>Manage Jobs</Button>
-                {user?.role === "admin" && (
-                  <Button variant="outline" onClick={() => navigate('/admin/assessments')}>Manage Assessments</Button>
-                )}
             </div>
           </div>
         </div>

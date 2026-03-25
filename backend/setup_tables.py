@@ -5,7 +5,7 @@ db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'resumeai.db'
 
 sql = """
 DROP TABLE IF EXISTS recruiters;
--- Recruiter / Job Poster
+-- Recruiter / Admin
 CREATE TABLE recruiters (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     company_name TEXT,
